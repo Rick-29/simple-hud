@@ -6,6 +6,9 @@
 
 pub const ID: &str = "simple_hud";
 pub const NAME: &str = "Simple HUD";
+/// The toggle key: its name, and the key it starts on (rebindable in Options > Mods).
+pub const KEY: &str = "toggle";
+pub const DEFAULT_KEY: &str = "key.keyboard.h";
 pub const VERSION: &str = "0.1.0";
 pub const DESCRIPTION: &str =
     "Coordinates, facing, time of day and dimension in a corner of the screen. /hud hides or shows it, /where puts your position in chat.";
