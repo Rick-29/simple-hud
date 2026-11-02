@@ -1,4 +1,5 @@
-// The box in the top-left corner (the debug screen takes that corner).
+// Two boxes: coordinates and facing in the top-left corner, biome, dimension
+// and time in the top-right corner (the debug screen takes those corners).
 fn simple_hud(
     game: &mut crate::game::Game<'_>,
     batch: &mut horizon_client::hud::HudBatch,
@@ -6,7 +7,7 @@ fn simple_hud(
 ) {
     use crate::game::simple_hud as m;
     use horizon_client::extras::Corner;
-    if !game.native_on(m::ID) || !game.native_corner_shown(Corner::TopLeft) {
+    if !game.native_on(m::ID) {
         return;
     }
     if !m::shown(|| game.native_setting(m::ID, m::SHOWN.0)) {
@@ -31,39 +32,37 @@ fn simple_hud(
     let panel = m::panel([p.x, p.y, p.z], p.yaw, p.dimension, biome.as_deref(), day_time, ores);
     let game: &crate::game::Game<'_> = game;
 
-    // Layout, in GUI pixels: rows of 10, a gap between the columns, and the
-    // divider row above the facing and the time.
+    // Left box: X, Y, Z, then the facing. Right box: biome, dimension, then
+    // the time, each line against the right edge.
+    let mut left = panel.left;
+    left.push(panel.bottom_left);
+    let mut right = panel.right;
+    if !panel.bottom_right.is_empty() {
+        right.push(panel.bottom_right);
+    }
+
     const ROW: f32 = 10.0;
     const PAD: f32 = 4.0;
-    const GAP: f32 = 16.0;
     let width = |line: &m::Line| game.native_text_width(&m::text(line));
-    let widest = |lines: &[m::Line]| lines.iter().map(width).fold(0.0, f32::max);
-    let left_w = widest(&panel.left).max(width(&panel.bottom_left));
-    let right_w = widest(&panel.right).max(width(&panel.bottom_right));
-    let rows = panel.left.len().max(panel.right.len()) as f32;
-    let w = PAD * 2.0 + left_w + GAP + right_w;
-    let h = PAD * 2.0 + ROW * rows + 5.0 + ROW;
-    let (x, y) = corners.place(Corner::TopLeft, w, h);
-    game.native_fill(batch, [x, y, w, h], m::BACKGROUND);
-
-    // Draws a line's pieces one after another from `at`.
-    let draw = |batch: &mut horizon_client::hud::HudBatch, line: &m::Line, at: [f32; 2]| {
-        let mut cx = at[0];
-        for (t, color) in line {
-            game.native_text(batch, t, [cx, at[1]], *color, true);
-            cx += game.native_text_width(t);
+    let mut draw_box = |batch: &mut horizon_client::hud::HudBatch, corner: Corner, lines: &[m::Line]| {
+        if lines.is_empty() || !game.native_corner_shown(corner) {
+            return;
+        }
+        let inner = lines.iter().map(width).fold(0.0, f32::max);
+        let w = PAD * 2.0 + inner;
+        let h = PAD * 2.0 + ROW * lines.len() as f32 - 2.0;
+        let (x, y) = corners.place(corner, w, h);
+        game.native_fill(batch, [x, y, w, h], m::BACKGROUND);
+        for (i, line) in lines.iter().enumerate() {
+            // Left box: from the left edge; right box: against the right edge.
+            let mut cx = if corner.left() { x + PAD } else { x + w - PAD - width(line) };
+            let cy = y + PAD + ROW * i as f32;
+            for (t, color) in line {
+                game.native_text(batch, t, [cx, cy], *color, true);
+                cx += game.native_text_width(t);
+            }
         }
     };
-    let right_edge = x + w - PAD;
-    for (i, line) in panel.left.iter().enumerate() {
-        draw(batch, line, [x + PAD, y + PAD + ROW * i as f32]);
-    }
-    for (i, line) in panel.right.iter().enumerate() {
-        draw(batch, line, [right_edge - width(line), y + PAD + ROW * i as f32]);
-    }
-    let div_y = y + PAD + ROW * rows + 1.0;
-    game.native_fill(batch, [x + PAD, div_y, w - PAD * 2.0, 1.0], m::DIVIDER);
-    let bottom_y = div_y + 4.0;
-    draw(batch, &panel.bottom_left, [x + PAD, bottom_y]);
-    draw(batch, &panel.bottom_right, [right_edge - width(&panel.bottom_right), bottom_y]);
+    draw_box(batch, Corner::TopLeft, &left);
+    draw_box(batch, Corner::TopRight, &right);
 }

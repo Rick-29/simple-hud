@@ -1,10 +1,10 @@
-// Simple HUD: a small box in the top-left corner.
+// Simple HUD: two small boxes in the top corners of the screen.
 //
-//   X 124.5                  Deep Dark
-//   Y -54.0  Redstone        OVERWORLD
-//   Z -342.8
-//   ───────────────────────────────────
-//   NW 315°               14:32  Day 8
+//   top-left                 top-right
+//   X 124.5                         Deep Dark
+//   Y -54.0  Diamond                OVERWORLD
+//   Z -342.8                     14:31  Day 8
+//   NW 315°
 //
 // Left: the coordinates (Y coloured by the ores at that height; at diamond
 // depth all three turn cyan) and the facing. Right: the biome (coloured by
